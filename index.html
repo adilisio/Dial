@@ -1,0 +1,1144 @@
+<title>Touchline Tactics</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: one-column phone app. A floodlit tactics board: chalk lines on striped grass,
+   saffron discs for your team, red for the opponent. Single dark look by choice. */
+:root {
+  --night: #0b1618;
+  --panel: #12232a;
+  --panel-2: #183039;
+  --rule: #27444d;
+  --chalk: #eef3ea;
+  --muted: #9cb2ae;
+  --home: #ffc53d;
+  --home-ink: #2b1e00;
+  --away: #e5534f;
+  --away-ink: #fff4f2;
+  --grass-a: #2d6a3f;
+  --grass-b: #285f39;
+  --grass-edge: #224f30;
+  --line: rgba(255,255,255,.8);
+  --good: #5ad890;
+  --bad: #ff7d6c;
+  --f-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background: var(--night);
+  color: var(--chalk);
+  font-family: var(--f-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-tap-highlight-color: transparent;
+}
+#app {
+  max-width: 560px;
+  margin: 0 auto;
+  min-height: 100%;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 14px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--home); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; line-height: 1.05; }
+p { margin: 0; }
+
+/* ---------- Home ---------- */
+.brand { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding-top: 6px; }
+.wordmark { font-size: 2.6rem; font-weight: 800; letter-spacing: .01em; text-transform: uppercase; }
+.wordmark span { color: var(--home); }
+.tag { color: var(--muted); font-size: .95rem; margin-top: 4px; }
+.rank {
+  display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center;
+  background: var(--panel); border: 1px solid var(--rule); border-radius: 14px; padding: 14px 16px;
+}
+.rank .lbl { font-size: .72rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+.rank .name { font-family: var(--f-display); font-size: 1.6rem; font-weight: 700; }
+.rank .stars { font-family: var(--f-display); font-size: 1.6rem; font-weight: 700; color: var(--home); text-align: right; font-variant-numeric: tabular-nums; }
+.bar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--panel-2); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--home); border-radius: 3px; }
+.chapter { display: flex; flex-direction: column; gap: 8px; }
+.ch-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 10px 2px 2px; border-bottom: 1px solid var(--rule); }
+.ch-head h2 { font-size: 1.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; }
+.ch-head .lvl { font-size: .72rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); white-space: nowrap; }
+.lesson-row {
+  display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 12px;
+  width: 100%; text-align: left; background: transparent; border: 0; border-radius: 12px;
+  padding: 10px 8px; min-height: 56px;
+}
+.lesson-row:not(:disabled):active { background: var(--panel); }
+.lesson-row:disabled { opacity: .45; cursor: default; }
+.lesson-row .num {
+  width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
+  font-family: var(--f-display); font-weight: 700; font-size: 1.1rem;
+  background: var(--panel-2); border: 1.5px solid var(--rule); font-variant-numeric: tabular-nums;
+}
+.lesson-row.done .num { background: var(--home); color: var(--home-ink); border-color: var(--home); }
+.lesson-row.next .num { border-color: var(--home); color: var(--home); }
+.lesson-row .t { font-weight: 700; min-width: 0; }
+.lesson-row .s { display: block; font-weight: 400; color: var(--muted); font-size: .85rem; }
+.lesson-row .st { color: var(--home); letter-spacing: 2px; font-size: .95rem; white-space: nowrap; }
+.lesson-row .st .off { color: var(--rule); }
+.foot { display: flex; justify-content: center; padding-top: 10px; }
+.link { background: none; border: 0; color: var(--muted); font-size: .85rem; text-decoration: underline; padding: 8px; }
+
+/* ---------- Lesson chrome ---------- */
+.topbar { display: grid; grid-template-columns: 44px 1fr; align-items: center; gap: 8px; }
+.icon-btn {
+  width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--rule); background: var(--panel);
+  display: grid; place-items: center; font-size: 1.2rem;
+}
+.topbar .ttl { font-family: var(--f-display); font-weight: 700; font-size: 1.2rem; text-transform: uppercase; letter-spacing: .03em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dots { display: flex; gap: 6px; margin-top: 4px; }
+.dots i { flex: 1; height: 4px; border-radius: 2px; background: var(--panel-2); }
+.dots i.on { background: var(--home); }
+.dots i.ok { background: var(--good); }
+.dots i.no { background: var(--bad); }
+
+/* ---------- Concept card ---------- */
+.concept { display: flex; flex-direction: column; gap: 14px; }
+.eyebrow { font-size: .72rem; text-transform: uppercase; letter-spacing: .14em; color: var(--home); font-weight: 700; }
+.concept h1 { font-size: 2.4rem; font-weight: 800; text-transform: uppercase; }
+.concept p { color: var(--chalk); max-width: 62ch; }
+.concept p + p { color: var(--chalk); }
+.keyidea {
+  border: 1.5px dashed var(--home); border-radius: 14px; padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.keyidea b { font-family: var(--f-display); text-transform: uppercase; letter-spacing: .08em; color: var(--home); font-size: .95rem; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; color: var(--muted); font-size: .85rem; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 14px; height: 14px; border-radius: 50%; display: inline-block; }
+.legend .lh { background: var(--home); }
+.legend .la { background: var(--away); }
+.legend .lb { width: 9px; height: 9px; background: #fff; border: 1px solid #222; }
+.legend .lp { width: 18px; height: 0; border-top: 2px solid var(--chalk); border-radius: 0; }
+.legend .lr { width: 18px; height: 0; border-top: 2px dashed var(--home); border-radius: 0; }
+
+.btn {
+  display: block; width: 100%; min-height: 52px; border-radius: 14px; border: 0;
+  background: var(--home); color: var(--home-ink);
+  font-family: var(--f-display); font-weight: 800; font-size: 1.3rem; text-transform: uppercase; letter-spacing: .04em;
+}
+.btn.ghost { background: transparent; color: var(--chalk); border: 1.5px solid var(--rule); }
+.btn:active { transform: translateY(1px); }
+
+/* ---------- Pitch ---------- */
+.stage {
+  background: var(--grass-edge); border-radius: 14px; overflow: hidden;
+  display: flex; justify-content: center;
+  box-shadow: 0 0 0 1px var(--rule);
+}
+.stage svg { display: block; width: 100%; height: auto; max-height: 50vh; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.stage.zone svg { cursor: crosshair; }
+.stripe-a { fill: var(--grass-a); }
+.stripe-b { fill: var(--grass-b); }
+.chalk { fill: none; stroke: var(--line); stroke-width: .3; }
+.chalk-dot { fill: var(--line); }
+.helper { fill: none; stroke: rgba(255,255,255,.35); stroke-width: .25; stroke-dasharray: 1 1; }
+.shade { fill: rgba(255,255,255,.09); }
+.pl { transition: transform .8s cubic-bezier(.4,.1,.2,1); }
+.pl circle.body { stroke-width: .35; }
+.pl.us circle.body { fill: var(--home); stroke: var(--home-ink); }
+.pl.them circle.body { fill: var(--away); stroke: var(--away-ink); }
+.pl text { font-family: var(--f-display); font-weight: 700; font-size: 1.75px; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.pl.us text { fill: var(--home-ink); }
+.pl.them text { fill: var(--away-ink); }
+.pl .ring { fill: none; stroke: var(--chalk); stroke-width: .35; opacity: 0; }
+.pl.pickable { cursor: pointer; }
+.pl.pickable .ring { opacity: 1; stroke-dasharray: 1.2 .8; animation: spin 6s linear infinite; transform-origin: 0 0; }
+.pl .hit { fill: transparent; }
+.pl.good .ring { opacity: 1; stroke: var(--good); stroke-width: .6; stroke-dasharray: none; animation: none; }
+.pl.bad .ring { opacity: 1; stroke: var(--bad); stroke-width: .6; stroke-dasharray: none; animation: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.ball { transition: transform .8s cubic-bezier(.4,.1,.2,1); }
+.ball circle { fill: #fff; stroke: #1b1b1b; stroke-width: .22; }
+.arr { fill: none; stroke-width: .45; stroke-linecap: round; animation: fadein .35s ease both; }
+.arr.pass { stroke: var(--chalk); }
+.arr.run { stroke: var(--home); stroke-dasharray: 1.1 .8; }
+.arr.drib { stroke: var(--home); stroke-dasharray: .3 .7; stroke-width: .6; }
+.arr.opp { stroke: var(--away); stroke-dasharray: 1.1 .8; }
+.zone-ok { fill: rgba(90,216,144,.22); stroke: var(--good); stroke-width: .35; stroke-dasharray: 1 .6; animation: fadein .35s ease both; }
+.tap { animation: fadein .2s ease both; }
+.tap.good circle { fill: var(--good); }
+.tap.bad circle { fill: var(--bad); }
+.tap circle { stroke: #111; stroke-width: .25; }
+.oline { stroke: var(--chalk); stroke-width: .3; stroke-dasharray: .8 .6; animation: fadein .35s ease both; }
+.oline-lbl { font-family: var(--f-display); font-size: 1.7px; fill: var(--chalk); font-weight: 700; }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---------- Question ---------- */
+.prompt { font-size: 1.12rem; font-weight: 700; line-height: 1.4; }
+.hint { color: var(--muted); font-size: .85rem; display: flex; align-items: center; gap: 8px; }
+.hint::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--home); animation: blink 1.4s ease-in-out infinite; }
+@keyframes blink { 50% { opacity: .25; } }
+.opts { display: flex; flex-direction: column; gap: 8px; }
+.opt {
+  text-align: left; min-height: 52px; padding: 12px 14px; border-radius: 12px;
+  background: var(--panel); border: 1.5px solid var(--rule); line-height: 1.35;
+  display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start;
+}
+.opt .k { font-family: var(--f-display); font-weight: 700; color: var(--muted); font-size: 1.05rem; line-height: 1.3; }
+.opt:not(:disabled):active { background: var(--panel-2); }
+.opt:disabled { cursor: default; }
+.opt.good { border-color: var(--good); background: color-mix(in srgb, var(--good) 14%, var(--panel)); }
+.opt.bad { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, var(--panel)); }
+.opt.dim { opacity: .5; }
+.fb {
+  border-radius: 14px; padding: 14px 16px; background: var(--panel); border: 1.5px solid var(--rule);
+  display: flex; flex-direction: column; gap: 10px; animation: rise .3s ease both;
+}
+.fb.good { border-color: var(--good); }
+.fb.bad { border-color: var(--bad); }
+.fb h3 { font-size: 1.5rem; font-weight: 800; text-transform: uppercase; }
+.fb.good h3 { color: var(--good); }
+.fb.bad h3 { color: var(--bad); }
+.fb p { max-width: 62ch; }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Result ---------- */
+.result { display: flex; flex-direction: column; gap: 18px; align-items: stretch; text-align: center; padding-top: 4vh; }
+.result .big { font-family: var(--f-display); font-size: 4rem; color: var(--home); letter-spacing: 8px; line-height: 1; }
+.result .big .off { color: var(--rule); }
+.result h1 { font-size: 2.2rem; text-transform: uppercase; font-weight: 800; }
+.result p { color: var(--muted); }
+.result .recap { text-align: left; background: var(--panel); border: 1px solid var(--rule); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+.result .recap b { font-family: var(--f-display); text-transform: uppercase; letter-spacing: .08em; color: var(--home); }
+.result .recap p { color: var(--chalk); }
+.row { display: flex; flex-direction: column; gap: 10px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pl, .ball { transition-duration: .01s; }
+  .pl.pickable .ring, .hint::before { animation: none; }
+  .fb, .arr, .zone-ok { animation: none; }
+}
+</style>
+
+<div id="app"></div>
+
+<script>
+(() => {
+"use strict";
+
+/* ================================================================
+   Coordinates: the pitch is 68 m wide (x: 0 = left touchline) and
+   105 m long (y: 0 = the goal you attack, 105 = your own goal).
+   Your team (saffron) always attacks UP the screen.
+   ================================================================ */
+
+const VIEWS = {
+  full:   [-2, -2, 72, 109],
+  top:    [-2, -2, 72, 60],
+  mid:    [-2, 24, 72, 64],
+  bottom: [-2, 48, 72, 59],
+};
+
+// Scene shorthand: us/them = [id, x, y, label]
+const S = (v, us, them, extra = {}) => Object.assign({ v, us, them }, extra);
+
+const CHAPTERS = [
+  { name: "Foundations", lvl: "Beginner" },
+  { name: "Attacking", lvl: "Intermediate" },
+  { name: "Defending", lvl: "Intermediate" },
+  { name: "Modern Tactics", lvl: "Advanced" },
+];
+
+const LESSONS = [
+/* ---------------------------- FOUNDATIONS ---------------------------- */
+{
+  ch: 0, title: "The Pitch & Positions", sub: "Thirds, roles and formations",
+  body: [
+    "Coaches split the pitch into three horizontal thirds. The defensive third is where mistakes cost goals. The middle third is where most of the game is fought. The attacking third is where chances are made.",
+    "Every team has a goalkeeper and ten outfield players arranged in lines: defenders (centre-backs and full-backs), midfielders, and forwards. A formation such as 4-3-3 lists those lines from back to front, never counting the goalkeeper.",
+  ],
+  key: "Left and right are always from your own team's view, facing the goal you attack.",
+  qs: [
+    { t: "zone", s: S("full", [["gk",34,101,"GK"]], [["ogk",34,4,"GK"]], { thirds: true }),
+      q: "Tap anywhere in the attacking third.",
+      z: [{ r: [0, 0, 68, 35] }],
+      x: "The attacking third is the 35 m closest to the goal you attack. Your team always attacks up the screen in this game." },
+    { t: "pick", s: S("full", [
+        ["gk",34,101,"1"],["rb",60,82,"2"],["lb",8,82,"3"],["rcb",44,88,"4"],["lcb",24,88,"5"],
+        ["dm",34,74,"6"],["rw",58,44,"7"],["rcm",46,63,"8"],["st",34,40,"9"],["lcm",22,63,"10"],["lw",10,44,"11"]], []),
+      q: "This is a 4-3-3. Tap the left back.",
+      o: ["rb","lb","rcb","lcb","dm","rw","rcm","st","lcm","lw"], a: "lb",
+      x: "The left back plays on the left of the back four, traditionally wearing No. 3. The No. 2 on the other side is the right back." },
+    { t: "mcq", s: S("full", [
+        ["gk",34,101,"GK"],["a",8,85," "],["b",25,89," "],["c",43,89," "],["d",60,85," "],
+        ["e",8,62," "],["f",25,64," "],["g",43,64," "],["h",60,62," "],["i",27,42," "],["j",41,42," "]], []),
+      q: "Count the lines from back to front. Which formation is this?",
+      o: ["4-4-2", "4-3-3", "3-5-2", "4-2-3-1"],
+      x: "Four defenders, four midfielders, two strikers: 4-4-2. Formations skip the goalkeeper and read from the back line forward." },
+  ],
+},
+{
+  ch: 0, title: "Width & Depth", sub: "Make the pitch big",
+  body: [
+    "With the ball, your team wants the pitch as big as possible. Width means players near the touchlines, which pulls defenders apart and opens gaps between them.",
+    "Depth means players at different heights: some high, some deep. It stretches the defence from front to back and gives the ball carrier passes forward and back.",
+  ],
+  key: "Attack big, defend small. Spread out when you have the ball, squeeze together when you don't.",
+  qs: [
+    { t: "zone", s: S("top", [
+        ["cm",34,50,"CM"],["lw",26,30,"LW"],["st",34,26,"ST"],["rw",40,30,"RW"],["lb",8,46,"LB"]],
+        [["o1",24,22],["o2",30,21],["o3",38,21],["o4",44,22],["o5",26,38],["o6",34,37],["o7",42,38],["ogk",34,3,"GK"]],
+        { ball: "cm" }),
+      q: "Your front three are bunched in the middle. Tap where the right winger should go to stretch the defence.",
+      z: [{ r: [55, 8, 13, 36] }],
+      rv: [[{ r: ["rw", [62, 28]] }]],
+      x: "Out on the right touchline. Now their left back has a problem: follow the winger and leave a gap inside, or stay narrow and leave the winger free." },
+    { t: "mcq", s: null,
+      q: "Why do attacking teams spread out wide?",
+      o: ["To pull defenders apart and open gaps between them", "So each player has less running to do", "Because passes along the touchline can't be intercepted", "Because each player must stay inside a fixed zone"],
+      x: "Width is about space. A defence can only cover so much ground, so every metre you make them cover opens a gap somewhere else." },
+    { t: "mcq", s: S("top", [
+        ["dm",34,54,"DM"],["lw",10,30,"LW"],["lcm",22,30,"CM"],["st",34,30,"ST"],["rcm",46,30,"CM"],["rw",58,30,"RW"]],
+        [["o1",14,26],["o2",28,25],["o3",40,25],["o4",54,26],["o5",20,42],["o6",34,42],["o7",48,42],["ogk",34,3,"GK"]],
+        { ball: "dm" }),
+      q: "Five attackers stand on one flat line. What is the problem?",
+      o: ["No depth: one line of defenders can mark them all, and there are no angles to pass forward or back", "Too much width", "They are all offside", "Nothing. A flat line is ideal"],
+      x: "A flat line is easy to defend because every attacker is at the same height as a defender. Staggering heights creates passing angles and makes defenders choose." },
+  ],
+},
+{
+  ch: 0, title: "Support & Triangles", sub: "Angles, distance and cover shadows",
+  body: [
+    "The player on the ball needs options. Good support is at an angle, with enough distance that a pass can travel past an opponent.",
+    "If a defender stands between you and the ball, you are in their cover shadow, invisible to the passer. Step out of it. Three teammates at angles form a triangle, which always gives the ball carrier two passes.",
+  ],
+  key: "Never hide behind a defender. Show for the ball at an angle.",
+  qs: [
+    { t: "pick", s: S("mid", [
+        ["rcm",44,64,"CM"],["st",44,36,"ST"],["am",31,44,"AM"],["lcm",22,64,"CM"],["rb",60,72,"RB"]],
+        [["o1",44,52],["o2",31,62],["o3",44,30],["o4",20,48]],
+        { ball: "rcm" }),
+      q: "Which teammate is the best pass for the midfielder on the ball?",
+      o: ["st","am","lcm"], a: "am",
+      rv: [[{ p: ["rcm","am"] }]],
+      x: "The striker is hidden in the presser's cover shadow, and the pass to the other midfielder runs straight through a defender. The AM sits at an angle, in a gap, facing forward." },
+    { t: "zone", s: S("mid", [
+        ["rb",62,62,"RB"],["rw",62,42,"RW"],["rcm",40,74,"CM"],["rcb",46,82,"CB"]],
+        [["o1",58,57],["o2",59,45],["o3",40,48]],
+        { ball: "rb" }),
+      q: "The right back is being pressed. Tap where the midfielder should move to make a triangle with the right back and winger.",
+      z: [{ c: [50, 53, 7] }],
+      rv: [[{ r: ["rcm", [50, 53]] }], [{ p: ["rb","rcm"] }]],
+      x: "Inside and slightly ahead of the right back. Now the right back has two passes, up the line or inside, and the presser can only block one." },
+    { t: "mcq", s: null,
+      q: "What is a defender's 'cover shadow'?",
+      o: ["The space behind a defender where a pass can't reach because the defender blocks the line", "The area the defender's teammate is responsible for", "The zone a defender protects by marking one player", "The space beside the goalkeeper"],
+      x: "A defender pressing the ball automatically blocks the pass to anyone standing directly behind them. Smart defenders curve their run to put a dangerous attacker in that shadow." },
+  ],
+},
+{
+  ch: 0, title: "Keep the Ball", sub: "Forward first, then sideways or back",
+  body: [
+    "Look forward first. A pass that gets past opponents is the most valuable thing you can do on the ball.",
+    "If forward is closed, play sideways or back to keep possession and try again from a better angle. Losing the ball under pressure in your own half is one of the costliest mistakes in football. Patience is a weapon.",
+  ],
+  key: "Forward if you can, safe if you can't. Never force it.",
+  qs: [
+    { t: "pick", s: S("mid", [
+        ["dm",34,72,"DM"],["lcb",24,82,"CB"],["rcm",48,66,"CM"],["st",34,46,"ST"]],
+        [["o1",22,56],["o2",46,56],["o3",34,38],["o4",52,62]],
+        { ball: "dm" }),
+      q: "Nobody is pressing the DM. Which pass helps your team most?",
+      o: ["lcb","rcm","st"], a: "st",
+      rv: [[{ p: ["dm","st"] }]],
+      x: "The lane between their midfielders is open. One pass into the striker takes two opponents out of the game. The other passes are safe but don't move you forward." },
+    { t: "pick", s: S("mid", [
+        ["lb",6,72,"LB"],["lw",6,50,"LW"],["lcm",20,60,"CM"],["lcb",24,84,"CB"]],
+        [["o1",10,67],["o2",12,75],["o3",8,54],["o4",16,63]],
+        { ball: "lb" }),
+      q: "Two players are pressing the left back. Where should the ball go?",
+      o: ["lw","lcm","lcb"], a: "lcb",
+      rv: [[{ p: ["lb","lcb"] }]],
+      x: "Both forward passes are covered. A pass back to the free centre-back keeps the ball, and from there the team can switch play to the open side." },
+    { t: "mcq", s: null,
+      q: "You receive with your back to goal and a defender tight behind you. What's usually the best move?",
+      o: ["Lay it off first-time to a teammate who is facing forward", "Try to turn immediately, whatever happens", "Kick it as far up the pitch as you can", "Stand still and shield until the referee gives a foul"],
+      x: "A teammate facing forward can see the whole pitch. Your job is to connect play quickly; turning into a tight marker usually loses the ball." },
+  ],
+},
+/* ---------------------------- ATTACKING ---------------------------- */
+{
+  ch: 1, title: "Switching Play", sub: "Attack the empty side",
+  body: [
+    "When the opponent crowds the side where the ball is, the far side is often empty.",
+    "Moving the ball quickly from one flank to the other, called a switch, forces the whole defence to slide across. If the ball moves faster than they can, someone is left one-on-one or completely free.",
+  ],
+  key: "Draw them in on one side, then hit the other.",
+  qs: [
+    { t: "pick", s: S("top", [
+        ["lcm",14,46,"CM"],["lw",5,28,"LW"],["st",28,22,"ST"],["rw",62,30,"RW"],["rcm",40,56,"CM"]],
+        [["o1",8,25],["o2",18,22],["o3",28,19],["o4",38,22],["o5",10,38],["o6",20,36],["o7",28,33],["ogk",34,3,"GK"]],
+        { ball: "lcm" }),
+      q: "The opponent has shifted to your left. Who should get the ball?",
+      o: ["lw","st","rw"], a: "rw",
+      rv: [[{ p: ["lcm","rw"] }], [{ d: ["rw", [58, 16]] }]],
+      x: "Every defender has slid to your left. The right winger has a whole flank of space. One diagonal pass turns a crowded attack into a run at goal." },
+    { t: "mcq", s: null,
+      q: "A switch of play only works if…",
+      o: ["The ball moves faster than the defence can shift across", "Every player swaps sides of the pitch too", "The goalkeeper plays the pass", "You dribble the ball across instead of passing"],
+      x: "Speed of the ball is everything. One accurate long pass, or two or three quick short ones, beats a defence that has to run to catch up." },
+  ],
+},
+{
+  ch: 1, title: "Overlaps & Underlaps", sub: "Create a 2-on-1 out wide",
+  body: [
+    "An overlap is a run around the outside of the ball carrier, usually by the full-back past the winger. It creates a two-on-one against the defender.",
+    "If the defender follows the runner, the winger cuts inside. If the defender stays, the runner is free. An underlap is the same idea with the run on the inside.",
+  ],
+  key: "Make the defender choose, then punish the choice.",
+  qs: [
+    { t: "zone", s: S("top", [
+        ["rw",56,32,"RW"],["rb",60,48,"RB"],["st",34,22,"ST"],["rcm",44,42,"CM"]],
+        [["o1",56,26],["o2",44,20],["o3",30,20],["o4",48,34],["ogk",34,3,"GK"]],
+        { ball: "rw" }),
+      q: "The winger faces their left back. Tap where your right back should run to overlap.",
+      z: [{ r: [58.5, 8, 9.5, 20] }],
+      rv: [[{ r: ["rb", [64, 19]] }], [{ p: ["rw","rb"] }]],
+      x: "Around the outside and beyond the winger, into the space down the line. The defender can't stop both players at once." },
+    { t: "mcq", s: S("top", [
+        ["rw",53,31,"RW"],["rb",64,18,"RB"],["st",34,20,"ST"]],
+        [["o1",61,22],["o2",42,18],["o3",30,19],["ogk",34,3,"GK"]],
+        { ball: "rw", ar: [{ f: "o1", t: [62, 19], k: "opp" }] }),
+      q: "Their left back has followed your overlapping right back. What should the winger do?",
+      o: ["Cut inside into the space the defender just left", "Pass to the overlapping right back anyway", "Stop and wait for the defender to come back", "Pass back to the goalkeeper"],
+      rv: [[{ d: ["rw", [46, 20]] }]],
+      x: "The overlap did its job without even touching the ball. The defender chose the runner, so the winger attacks the gap inside." },
+    { t: "mcq", s: null,
+      q: "An underlap is a run that goes…",
+      o: ["Inside the ball carrier, between the defender and the centre", "Around the outside of the ball carrier", "Backwards to offer a safe pass", "Behind your own defence"],
+      x: "Underlaps are common when the winger hugs the touchline: the runner attacks the channel between full-back and centre-back." },
+  ],
+},
+{
+  ch: 1, title: "One-Twos & Third Man", sub: "Combinations that beat markers",
+  body: [
+    "A one-two (wall pass): you pass to a teammate and sprint past your marker for an instant return.",
+    "A third-man run: player A passes to B, and B finds C, who was already running. Defenders watch the ball and the first receiver, so the third player arrives unseen.",
+  ],
+  key: "Pass and move. The run after the pass matters as much as the pass.",
+  qs: [
+    { t: "zone", s: S("top", [
+        ["lcm",26,46,"CM"],["st",36,28,"ST"],["lw",8,26,"LW"],["rw",60,26,"RW"]],
+        [["o1",14,16],["o2",28,16],["o3",42,16],["o4",54,16],["o5",26,39],["o6",44,37],["ogk",34,3,"GK"]],
+        { ball: "lcm" }),
+      q: "The CM passes to the striker and sprints past their marker. Tap the space where the CM should receive the return pass.",
+      z: [{ c: [21, 28, 6] }],
+      rv: [[{ p: ["lcm","st"] }], [{ r: ["lcm", [21, 28]] }, { p: ["st","lcm"] }]],
+      x: "Behind the midfielder who was marking. The striker's first-time lay-off releases the CM facing goal, and the marker is left behind." },
+    { t: "pick", s: S("mid", [
+        ["rcb",44,80,"CB"],["st",40,50,"ST"],["rcm",48,60,"CM"],["rb",62,76,"RB"],["lw",8,40,"LW"]],
+        [["o1",40,46],["o2",28,58],["o3",58,56],["o4",30,36]],
+        { ball: "rcb" }),
+      q: "The centre-back passes into the striker, who has a defender tight behind. Who should arrive for the lay-off?",
+      o: ["rcm","rb","lw"], a: "rcm",
+      rv: [[{ p: ["rcb","st"] }], [{ r: ["rcm", [46, 52]] }, { p: ["st","rcm"] }]],
+      x: "The striker can't turn but can lay it off. The midfielder arrives facing forward with the whole pitch ahead. That's the third man." },
+  ],
+},
+{
+  ch: 1, title: "Offside & Through Balls", sub: "Time the run, weight the pass",
+  body: [
+    "You are offside if, at the moment a teammate passes, you are in the opponent's half and closer to their goal line than both the ball and the second-last defender (usually the last outfield player). Level counts as onside.",
+    "Good forwards start onside and burst past the line as the pass is played. A through ball goes into space in front of the runner, not to their feet.",
+  ],
+  key: "Start level, run on the pass, receive behind the line.",
+  qs: [
+    { t: "pick", s: S("top", [
+        ["cm",34,46,"CM"],["lw",20,19,"LW"],["st",34,29,"ST"],["rw",48,26,"RW"]],
+        [["o1",14,24],["o2",28,24],["o3",40,24],["o4",54,24],["ogk",34,2,"GK"]],
+        { ball: "cm" }),
+      q: "The CM passes right now. Which attacker is offside?",
+      o: ["lw","st","rw"], a: "lw",
+      rv: [[{ ol: 24 }]],
+      x: "The defensive line is the second-last opponent (the keeper is the last). Only the left winger is beyond it. The striker and right winger are behind it, so they are onside." },
+    { t: "zone", s: S("top", [
+        ["cm",34,46,"CM"],["st",33,28,"ST"],["lw",8,30,"LW"],["rw",60,30,"RW"]],
+        [["o1",14,24],["o2",27,24],["o3",40,24],["o4",54,24],["ogk",34,2,"GK"]],
+        { ball: "cm", ar: [{ f: "st", t: [32, 16], k: "run" }] }),
+      q: "The striker starts the run from an onside position. Tap where the CM should play the through ball.",
+      z: [{ r: [18, 6, 30, 16] }],
+      rv: [[{ r: ["st", [32, 13]] }, { p: ["cm","st"] }]],
+      x: "Into the space behind the line, in front of the runner. The striker meets the ball at full speed while the defenders have to turn." },
+    { t: "mcq", s: null,
+      q: "From which restart can you NOT be offside?",
+      o: ["A throw-in", "An indirect free kick", "A direct free kick", "A through ball from open play"],
+      x: "You cannot be offside directly from a throw-in, a goal kick or a corner kick. Free kicks count." },
+  ],
+},
+{
+  ch: 1, title: "Counter-Attack", sub: "Ten seconds to hurt them",
+  body: [
+    "The moment you win the ball, the opponent is out of shape: full-backs high, midfielders caught upfield.",
+    "Go forward fast, ideally within ten seconds, before they recover. Look for the first forward pass, sprint into space, and attack with numbers.",
+  ],
+  key: "Win it, look forward, go.",
+  qs: [
+    { t: "pick", s: S("full", [
+        ["dm",34,70,"DM"],["lcb",24,88,"CB"],["rcb",44,88,"CB"],["gk",34,101,"GK"],["lcm",18,68,"CM"],["rw",58,52,"RW"],["st",34,50,"ST"],["lw",10,58,"LW"]],
+        [["o1",28,80],["o2",42,80],["o3",24,64],["o4",40,76],["o5",8,62],["o6",61,62],["o7",28,44],["o8",40,44],["ogk",34,3,"GK"]],
+        { ball: "dm" }),
+      q: "You've just won the ball and they have five players caught in your half. Where should it go?",
+      o: ["lcb","lcm","rw"], a: "rw",
+      rv: [[{ p: ["dm","rw"] }], [{ d: ["rw", [58, 30]] }, { r: ["st", [36, 30]] }]],
+      x: "Their right side is empty and the winger is already past their full-back. One pass forward and you're attacking two defenders with two players." },
+    { t: "mcq", s: null,
+      q: "You're on a 3-on-2 counter-attack with the ball. What should you do?",
+      o: ["Drive at a defender to commit them, then pass to the free teammate", "Slow down and wait for more teammates", "Shoot from distance immediately", "Pass back to reset the attack"],
+      x: "Make a defender commit to you. The moment they step in, someone else is free. Slowing down lets the defence recover." },
+  ],
+},
+{
+  ch: 1, title: "Attacking the Box", sub: "Near post, far post, cutback",
+  body: [
+    "When the ball reaches the wing, fill the box with purpose: one runner attacks the near post, one the far post, and one arrives late around the penalty spot or edge.",
+    "When a winger reaches the byline, a pass pulled back toward the penalty spot (a cutback) is one of the best chances in football: defenders are running toward their own goal and can't see the late runner.",
+  ],
+  key: "Fill the three zones: near post, far post, cutback.",
+  qs: [
+    { t: "zone", s: S("top", [
+        ["rw",59,4,"RW"],["st",38,9,"ST"],["am",30,26,"AM"],["lw",14,12,"LW"]],
+        [["o1",30,5],["o2",37,6],["o3",43,4],["o4",24,7],["ogk",34,1.5,"GK"]],
+        { ball: "rw" }),
+      q: "The winger reached the byline and the defenders have dropped onto the six-yard line. Tap the best area for a cutback.",
+      z: [{ r: [24, 9, 18, 11] }],
+      rv: [[{ r: ["am", [32, 14]] }, { p: ["rw","am"] }]],
+      x: "Around the penalty spot. The defenders are facing their own goal and the late runner arrives facing it too, with time to shoot." },
+    { t: "mcq", s: null,
+      q: "When a cross is coming, which three areas should attackers fill?",
+      o: ["Near post, far post, and the penalty-spot cutback area", "Both corner flags and the halfway line", "All inside the six-yard box", "The edge of the box only"],
+      x: "Spreading runners across the three zones means the cross always has a target, whatever height or angle it arrives at." },
+  ],
+},
+/* ---------------------------- DEFENDING ---------------------------- */
+{
+  ch: 2, title: "Pressure, Cover, Balance", sub: "The three jobs of a defence",
+  body: [
+    "The first defender pressures the ball: close down, slow the attacker, and stop the forward pass.",
+    "The second defender covers, a few metres behind and inside, ready if the first is beaten. Everyone else provides balance by tucking in to protect the most dangerous space, even if it leaves a far-side attacker free.",
+  ],
+  key: "One presses, one covers, the rest protect the middle.",
+  qs: [
+    { t: "zone", s: S("bottom", [
+        ["rb",57,75,"RB"],["rcb",44,90,"CB"],["lcb",33,87,"CB"],["lb",12,84,"LB"],["gk",34,101,"GK"],["dm",40,68,"DM"]],
+        [["w",60,70],["o2",34,80],["o3",8,74]],
+        { ball: "w" }),
+      q: "Your right back is pressing their winger. Tap where the right centre-back should move to cover.",
+      z: [{ c: [50, 83, 5.5] }],
+      rv: [[{ r: ["rcb", [50, 83]] }]],
+      x: "Behind and inside the right back: close enough to step in if the winger gets past, and still between the ball and the goal." },
+    { t: "mcq", s: S("bottom", [
+        ["rb",57,75,"RB"],["rcb",50,83,"CB"],["lcb",33,87,"CB"],["lb",6,80,"LB"],["gk",34,101,"GK"]],
+        [["w",60,70],["o2",34,80],["o3",6,74]],
+        { ball: "w" }),
+      q: "The ball is on your right wing. What should your left back do?",
+      o: ["Tuck in toward the centre to protect the space in front of goal", "Stay on the touchline marking their winger tightly", "Sprint forward to press", "Run across to help the right back"],
+      rv: [[{ r: ["lb", [22, 86]] }]],
+      x: "That's balance. The far-side winger is the least dangerous player, because a pass that long gives the defence time to adjust. The middle matters more." },
+  ],
+},
+{
+  ch: 2, title: "Compactness", sub: "Defend small",
+  body: [
+    "Without the ball, make the pitch small. Keep roughly 10 to 15 metres between your back line and your midfield line, and slide together toward the ball.",
+    "A compact block leaves no gaps between the lines for opponents to receive in. The distance between your lines matters more than how high or deep you defend.",
+  ],
+  key: "Close the gaps between lines, and move as one unit.",
+  qs: [
+    { t: "zone", s: S("full", [
+        ["d1",10,88,"LB"],["d2",26,90,"CB"],["d3",42,90,"CB"],["d4",58,88,"RB"],
+        ["m1",12,57,"LM"],["m2",28,58,"CM"],["m3",40,58,"CM"],["m4",56,57,"RM"],["f1",26,44,"ST"],["f2",42,44,"ST"],["gk",34,101,"GK"]],
+        [["o6",34,50],["o7",20,40],["o8",48,40],["o9",34,30],["o10",28,62],["o11",42,64]],
+        { ball: "o6" }),
+      q: "Your team is stretched. Tap the most dangerous space the opponent could pass into.",
+      z: [{ r: [14, 63, 40, 23] }],
+      rv: [[{ r: ["d1", [11, 72]] }, { r: ["d2", [26, 73]] }, { r: ["d3", [42, 73]] }, { r: ["d4", [57, 72]] }]],
+      x: "The huge gap between your midfield and defence. A pass in there lets their forwards turn and run at your back line. Push the defenders up to close it." },
+    { t: "mcq", s: null,
+      q: "The opponent has the ball on your left side. Your whole team should…",
+      o: ["Slide across toward the ball, keeping the distances between players", "Stay in position and wait", "Send everyone to press the ball", "Spread out to cover the full width"],
+      x: "Shift as a unit. The far side is left open on purpose, because a long switch takes time and gives you the chance to slide back." },
+  ],
+},
+{
+  ch: 2, title: "Defending 1-on-1", sub: "Goal-side, patient, show them out",
+  body: [
+    "Stay goal-side: between the attacker and the goal you are defending. Don't dive in. Stay on your feet and slow them down so help can arrive.",
+    "Angle your body to show the attacker toward the touchline, away from goal and toward your teammates. Tackle when they take a heavy touch.",
+  ],
+  key: "Delay, show them outside, then strike on a bad touch.",
+  qs: [
+    { t: "zone", s: S("bottom", [
+        ["rb",56,90,"RB"],["rcb",42,90,"CB"],["lcb",28,90,"CB"],["gk",34,101,"GK"]],
+        [["w",54,68],["o2",36,76]],
+        { ball: "w", ar: [{ f: "w", t: [50, 80], k: "opp" }] }),
+      q: "Their winger is dribbling at your right back. Tap where the right back should stand to show the winger down the touchline.",
+      z: [{ c: [50.5, 78, 4.5] }],
+      rv: [[{ r: ["rb", [50.5, 78]] }], [{ d: ["w", [60, 80]] }]],
+      x: "Goal-side and a little inside. Standing on the inside closes the route to goal and leaves only the path down the line." },
+    { t: "mcq", s: null,
+      q: "In a 1-on-1, when should you make the tackle?",
+      o: ["When the attacker takes a heavy touch and the ball moves away from their feet", "Immediately, as soon as they reach you", "Never. Only block shots", "Whenever the attacker looks up"],
+      x: "A heavy touch is the moment the ball is closer to you than to them. Diving in earlier lets a good dribbler go past." },
+    { t: "mcq", s: null,
+      q: "What does 'goal-side' mean?",
+      o: ["Between the attacker and the goal you are defending", "Standing on the goal line", "On the same side of the pitch as the ball", "Behind the attacker, chasing them"],
+      x: "If you're goal-side, the attacker has to go through or around you to reach your goal." },
+  ],
+},
+{
+  ch: 2, title: "Pressing & Traps", sub: "Hunt the ball as a team",
+  body: [
+    "Pressing means hunting the ball together. Press on a trigger: a backward pass, a poor touch, a receiver facing their own goal, or a pass toward the touchline.",
+    "The touchline works like an extra defender. Press from the inside, block the pass back into the middle, and the ball carrier is trapped.",
+  ],
+  key: "Press on the trigger, from the inside, and everyone moves together.",
+  qs: [
+    { t: "mcq", s: null,
+      q: "Which of these is a classic pressing trigger?",
+      o: ["The receiver takes a heavy first touch", "Their centre-back has time and lots of passing options", "You're outnumbered near the ball", "They've just regrouped into a compact shape"],
+      x: "A heavy touch means the receiver needs a moment to get control. Other triggers: a back pass, a pass to the touchline, a receiver facing their own goal." },
+    { t: "pick", s: S("top", [
+        ["st",36,20,"ST"],["rw",52,32,"RW"],["rcm",46,42,"CM"],["rb",60,50,"RB"],["lcm",24,42,"CM"],["lw",14,28,"LW"]],
+        [["olb",62,22],["olcb",44,11],["orcb",24,11],["orb",6,22],["om1",44,31],["om2",28,32],["ogk",34,2,"GK"]],
+        { ball: "olb" }),
+      q: "Their left back has received on the touchline, facing their own goal. Which of your players should press?",
+      o: ["st","rw","rcm","rb"], a: "rw",
+      rv: [[{ r: ["rw", [59, 26]] }, { r: ["rcm", [47, 33]] }, { r: ["st", [52, 15]] }]],
+      x: "The right winger is closest and presses from the inside. The midfielder marks the inside pass and the striker cuts off the back pass. With the touchline on the other side, the left back is trapped." },
+    { t: "mcq", s: null,
+      q: "When pressing a player near the touchline, from which side should you approach?",
+      o: ["From the inside, curving your run to block the pass back into the middle", "Straight from behind", "From the outside, along the touchline", "It doesn't matter"],
+      x: "Curving your run puts the inside pass in your cover shadow, so the only way out is down the line, where your team is waiting." },
+  ],
+},
+/* ---------------------------- MODERN TACTICS ---------------------------- */
+{
+  ch: 3, title: "Five Lanes & Half-Spaces", sub: "How elite teams divide the pitch",
+  body: [
+    "Coaches split the pitch into five vertical lanes: two wings, two half-spaces, and the centre. The half-spaces run in line with the sides of the penalty box, between the wing and the middle.",
+    "A player in the half-space can see the goal, the wing and the centre at once, and defenders are often unsure who should pick them up. In positional play, teams avoid stacking more than two players in one lane so the whole width stays occupied.",
+  ],
+  key: "The half-space is where wingers, midfielders and full-backs all want to receive.",
+  qs: [
+    { t: "zone", s: S("full", [["gk",34,101,"GK"]], [["ogk",34,4,"GK"]], { lanes: true }),
+      q: "The dashed lines split the pitch into five lanes. Tap anywhere in the left half-space.",
+      z: [{ r: [13.84, -2, 11, 109] }],
+      x: "The left half-space runs between the left edge of the penalty box and the edge of the six-yard box, the second lane from the left." },
+    { t: "mcq", s: null,
+      q: "Why is receiving in the half-space so valuable?",
+      o: ["You can see goal, the wing and the centre, and it's unclear which defender should mark you", "It's always offside-proof", "Referees give more fouls there", "Defenders are not allowed in it"],
+      x: "Wide receivers are boxed in by the touchline; central receivers are crowded. The half-space gives a view of everything and confuses defensive responsibilities." },
+    { t: "mcq", s: null,
+      q: "Why do positional-play teams avoid putting three players in the same vertical lane?",
+      o: ["They block each other's passing lines and leave other lanes empty", "It's against the rules", "It makes the team too fast", "The referee can't see them"],
+      x: "Players stacked in one lane can be marked by the same defenders, and the empty lanes give the defence nothing to worry about." },
+  ],
+},
+{
+  ch: 3, title: "Between the Lines", sub: "Find the pocket",
+  body: [
+    "The 'lines' are the opponent's units: forwards, midfield, defence. The space between their midfield and defence is the most valuable area on the pitch.",
+    "A player who receives there, ideally half-turned to face forward, has bypassed a whole line and can run straight at the defence. Line-breaking passes are how good teams move up the pitch.",
+  ],
+  key: "Receive in the pocket, half-turned, and attack the back line.",
+  qs: [
+    { t: "zone", s: S("top", [["cm",34,54,"CM"],["am",40,49,"AM"]],
+        [["o1",14,20],["o2",28,19],["o3",40,19],["o4",54,20],["o5",16,41],["o6",28,42],["o7",40,42],["o8",52,41],["ogk",34,2,"GK"]],
+        { ball: "cm" }),
+      q: "Tap the space between the lines, where your attacking midfielder would most like to receive.",
+      z: [{ r: [10, 23, 48, 15] }],
+      rv: [[{ r: ["am", [34, 30]] }, { p: ["cm","am"] }]],
+      x: "Between their midfield and their defence. Their midfielders are facing the wrong way and their defenders must choose whether to step out and leave a gap behind." },
+    { t: "pick", s: S("mid", [
+        ["rcb",44,66,"CB"],["lcb",24,66,"CB"],["dm",32,62,"DM"],["rb",60,64,"RB"],["am",36,38,"AM"],["st",34,31,"ST"]],
+        [["f1",26,58],["f2",36,56],["m1",20,48],["m2",30,48],["m3",46,48],["m4",56,48],["d1",14,28],["d2",28,28],["d3",40,28],["d4",54,28]],
+        { ball: "rcb" }),
+      q: "Which pass from the centre-back breaks the most lines?",
+      o: ["dm","rb","am"], a: "am",
+      rv: [[{ p: ["rcb","am"] }], [{ d: ["am", [38, 32]] }]],
+      x: "The AM is in the pocket between their midfield and defence. One pass takes six opponents out of the game. The others keep the ball in front of them." },
+  ],
+},
+{
+  ch: 3, title: "Overloads & Isolation", sub: "Crowd one side, attack the other",
+  body: [
+    "An overload means more of your players than theirs in one area, like three against two. Overloads help you play through pressure.",
+    "Teams also overload one side on purpose to drag defenders over, then switch to the far side, where their best dribbler is isolated one-on-one with space to attack.",
+  ],
+  key: "Numbers on one side create space on the other.",
+  qs: [
+    { t: "mcq", s: S("top", [
+        ["lb",8,44,"LB"],["lcm",20,34,"CM"],["lw",6,26,"LW"],["st",34,22,"ST"]],
+        [["o1",11,31],["o2",15,40],["o3",28,19],["o4",40,19],["ogk",34,2,"GK"]],
+        { ball: "lb", shade: [{ r: [0, 22, 26, 26] }] }),
+      q: "Count the players in the shaded area. What's the situation on the left?",
+      o: ["3 v 2 in your favour", "2 v 2", "3 v 3", "2 v 3 against you"],
+      x: "Left back, midfielder and winger against two defenders. The spare player means someone is always free if the team passes quickly." },
+    { t: "pick", s: S("top", [
+        ["lcm",18,46,"CM"],["lb",6,50,"LB"],["lw",5,30,"LW"],["st",26,22,"ST"],["rw",60,26,"RW"]],
+        [["o1",9,27],["o2",20,22],["o3",32,20],["o4",58,21],["o5",12,36],["o6",22,32],["o7",30,32],["ogk",34,2,"GK"]],
+        { ball: "lcm" }),
+      q: "Six opponents have been dragged to your left. Who should get the ball?",
+      o: ["lw","st","rw"], a: "rw",
+      rv: [[{ p: ["lcm","rw"] }], [{ d: ["rw", [52, 12]] }]],
+      x: "The overload worked: your right winger is isolated against one defender with half the pitch to attack. That's why teams put their best dribbler on the far side." },
+  ],
+},
+{
+  ch: 3, title: "Beating the High Press", sub: "Play out with a spare player",
+  body: [
+    "When the opponent presses high, build up with numbers. The goalkeeper acts as an extra outfield player, the centre-backs split wide, and a midfielder may drop in.",
+    "The aim is a 'plus one': one more player than the pressers, so someone is always free. Find that player and the press is broken.",
+  ],
+  key: "Count the pressers, add one, find the free player.",
+  qs: [
+    { t: "mcq", s: null,
+      q: "Their two strikers press your two centre-backs. How do you create a spare player?",
+      o: ["Use the goalkeeper or a dropping midfielder to make it 3 v 2", "Kick it long every time", "Ask the centre-backs to dribble past them", "Move the centre-backs closer together"],
+      x: "Two against two is a fair fight. Bring a third player in and one of you is always free." },
+    { t: "pick", s: S("bottom", [
+        ["gk",34,101,"GK"],["lcb",20,95,"CB"],["rcb",48,95,"CB"],["dm",34,85,"DM"],["lb",6,80,"LB"],["rb",62,80,"RB"],["lcm",22,70,"CM"],["rcm",46,70,"CM"]],
+        [["s1",25,91],["s2",44,92],["am",34,81],["lw",20,81],["rw",59,77],["m1",22,66],["m2",46,66]],
+        { ball: "gk" }),
+      q: "They're pressing man-to-man in the middle. Who is your free player?",
+      o: ["lcb","rcb","dm","lb","rb"], a: "lb",
+      rv: [[{ p: ["gk","lb"] }], [{ d: ["lb", [8, 62]] }]],
+      x: "Every central player is marked and their winger on your left has tucked inside. The left back is the plus one. A press is designed to make you panic; the free player is usually out wide." },
+  ],
+},
+{
+  ch: 3, title: "Rest Defence & Counter-Press", sub: "Defend while you attack",
+  body: [
+    "Rest defence is the shape your team keeps behind the ball while attacking, such as three defenders and two midfielders, so a lost ball doesn't become a counter-attack.",
+    "Counter-pressing means that, right after losing the ball, nearby players press immediately, aiming to win it back within about five seconds while the opponent is still disorganised.",
+  ],
+  key: "Attack with a plan for losing the ball.",
+  qs: [
+    { t: "mcq", s: null,
+      q: "You've just lost the ball in their half, and three of your players are nearby. Best reaction?",
+      o: ["Press the ball immediately to win it back before they organise", "Jog back to your own half", "Stop and complain to the referee", "Wait for the ball carrier to make a mistake"],
+      x: "Right after winning the ball, the opponent is spread out and looking forward. That's the best moment to win it back high up the pitch." },
+    { t: "zone", s: S("full", [
+        ["gk",34,101,"GK"],["lcb",24,58,"CB"],["rcb",44,58,"CB"],["dm",30,30,"DM"],["lb",8,30,"LB"],["rb",62,24,"RB"],
+        ["lcm",20,20,"CM"],["rcm",46,18,"CM"],["lw",10,12,"LW"],["st",34,10,"ST"],["rw",58,10,"RW"]],
+        [["ogk",34,2,"GK"],["d1",28,7],["d2",40,7],["d3",18,12],["d4",52,13],["m1",24,25],["m2",42,26],["ten",32,44,"10"],["f9",40,64]],
+        { ball: "rw" }),
+      q: "You're attacking down the right. Their No. 10 waits in front of your centre-backs for a counter. Tap where your defensive midfielder should be.",
+      z: [{ c: [32, 46, 6.5] }],
+      rv: [[{ r: ["dm", [32, 47]] }]],
+      x: "Close to their No. 10. Any clearance toward that player can be intercepted, and together with the centre-backs you form a solid rest defence." },
+    { t: "mcq", s: null,
+      q: "A common rest-defence structure while attacking is…",
+      o: ["3+2: three defenders and two midfielders stay behind the ball", "Nobody: everyone joins the attack", "Only the goalkeeper stays back", "All ten outfield players in the box"],
+      x: "3+2 (or 2+3) keeps five players ready to stop a counter while the other five attack." },
+  ],
+},
+{
+  ch: 3, title: "Inverted Full-Backs & False 9", sub: "Roles that bend the rules",
+  body: [
+    "An inverted full-back moves into central midfield when the team has the ball instead of overlapping wide. It adds a midfielder for control and protects the middle against counters, while the winger holds the width.",
+    "A false 9 is a striker who drops deep into midfield. If a centre-back follows, a gap opens in the back line for wingers or midfielders to run into. If nobody follows, the false 9 is free between the lines.",
+  ],
+  key: "Positions are starting points. What matters is the space they create.",
+  qs: [
+    { t: "mcq", s: null,
+      q: "What does an inverted full-back do when the team has the ball?",
+      o: ["Moves into central midfield instead of overlapping down the wing", "Plays as an extra striker", "Stays as the last defender", "Swaps to the opposite flank"],
+      x: "Moving inside creates an extra midfielder for building play and puts a defender in the middle, where counter-attacks are most dangerous." },
+    { t: "pick", s: S("top", [
+        ["st",34,40,"F9"],["lw",10,28,"LW"],["rw",58,28,"RW"],["lcm",24,50,"CM"],["rcm",44,50,"CM"]],
+        [["d1",12,22],["d2",24,20],["d3",34,36,"CB"],["d4",54,22],["m1",22,44],["m2",48,44],["ogk",34,2,"GK"]],
+        { ball: "st", ar: [{ f: "d3", t: [34, 22], k: "opp", rev: true }] }),
+      q: "Your false 9 dropped deep and their centre-back followed. Who should attack the gap left behind?",
+      o: ["lw","rw","lcm"], a: "rw",
+      rv: [[{ r: ["rw", [44, 13]] }, { p: ["st","rw"] }]],
+      x: "The right winger is closest to the hole between their left centre-back and full-back. A diagonal run into it, with a pass from the false 9, puts the winger through on goal." },
+  ],
+},
+];
+
+/* ================================================================ */
+
+const app = document.getElementById("app");
+const KEY = "touchline-tactics-v1";
+const TOTAL_STARS = LESSONS.length * 3;
+let store = {};
+try { store = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { store = {}; }
+if (!store.best) store.best = {};
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} };
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function starsHTML(n) {
+  let s = "";
+  for (let i = 0; i < 3; i++) s += i < n ? "★" : '<span class="off">★</span>';
+  return s;
+}
+function totalStars() { return Object.values(store.best).reduce((a, b) => a + b, 0); }
+function rankName(st) {
+  if (st >= 55) return "Mastermind";
+  if (st >= 40) return "Tactician";
+  if (st >= 25) return "First Team";
+  if (st >= 10) return "Academy Prospect";
+  return "Sunday League";
+}
+const unlocked = (i) => i === 0 || store.best[i - 1] != null;
+
+/* ---------------- Home ---------------- */
+function home() {
+  const st = totalStars();
+  const nextIdx = LESSONS.findIndex((_, i) => store.best[i] == null);
+  let html = `
+    <header class="brand">
+      <div><div class="wordmark">Touch<span>line</span></div>
+      <p class="tag">Soccer strategy, from first touch to false 9.</p></div>
+    </header>
+    <section class="rank" aria-label="Your progress">
+      <div><div class="lbl">Coaching rank</div><div class="name">${rankName(st)}</div></div>
+      <div class="stars">★ ${st}<span style="color:var(--muted);font-size:1rem"> / ${TOTAL_STARS}</span></div>
+      <div class="bar"><i style="width:${(st / TOTAL_STARS) * 100}%"></i></div>
+    </section>`;
+  CHAPTERS.forEach((c, ci) => {
+    html += `<section class="chapter"><div class="ch-head"><h2>${c.name}</h2><span class="lvl">${c.lvl}</span></div>`;
+    LESSONS.forEach((l, i) => {
+      if (l.ch !== ci) return;
+      const done = store.best[i] != null, open = unlocked(i);
+      const cls = done ? "done" : i === nextIdx ? "next" : "";
+      html += `<button class="lesson-row ${cls}" data-i="${i}" ${open ? "" : "disabled"}>
+        <span class="num">${open ? i + 1 : "🔒"}</span>
+        <span class="t">${esc(l.title)}<span class="s">${esc(l.sub)}</span></span>
+        <span class="st">${done ? starsHTML(store.best[i]) : ""}</span></button>`;
+    });
+    html += `</section>`;
+  });
+  html += `<div class="foot"><button class="link" id="reset">Reset progress</button></div>`;
+  app.innerHTML = html;
+  app.querySelectorAll(".lesson-row").forEach((b) => b.addEventListener("click", () => startLesson(+b.dataset.i)));
+  const r = document.getElementById("reset");
+  r.addEventListener("click", () => {
+    if (r.dataset.armed) { store = { best: {} }; save(); home(); return; }
+    r.dataset.armed = "1"; r.textContent = "Tap again to erase all stars";
+    setTimeout(() => { if (r.isConnected) { delete r.dataset.armed; r.textContent = "Reset progress"; } }, 3000);
+  });
+  scrollTo(0, 0);
+}
+
+/* ---------------- Lesson flow ---------------- */
+let L = null; // { i, step, results: [] }
+
+function startLesson(i) {
+  L = { i, step: -1, results: [] };
+  concept();
+}
+
+function topbar(title) {
+  const les = LESSONS[L.i];
+  const dots = les.qs.map((_, k) => {
+    const r = L.results[k];
+    return `<i class="${r === true ? "ok" : r === false ? "no" : k === L.step ? "on" : ""}"></i>`;
+  }).join("");
+  return `<div class="topbar"><button class="icon-btn" id="back" aria-label="Back to lessons">←</button>
+    <div style="min-width:0"><div class="ttl">${esc(title)}</div><div class="dots">${dots}</div></div></div>`;
+}
+function bindBack() { document.getElementById("back").addEventListener("click", home); }
+
+function concept() {
+  const les = LESSONS[L.i];
+  app.innerHTML = `${topbar(les.title)}
+    <article class="concept">
+      <div class="eyebrow">${CHAPTERS[les.ch].name} · Lesson ${L.i + 1} of ${LESSONS.length}</div>
+      <h1>${esc(les.title)}</h1>
+      ${les.body.map((p) => `<p>${esc(p)}</p>`).join("")}
+      <div class="keyidea"><b>Coach's key idea</b><span>${esc(les.key)}</span></div>
+      <div class="legend">
+        <span><i class="lh"></i>Your team (attacks up)</span>
+        <span><i class="la"></i>Opponent</span>
+        <span><i class="lb"></i>Ball</span>
+        <span><i class="lp"></i>Pass</span>
+        <span><i class="lr"></i>Run</span>
+      </div>
+      <button class="btn" id="go">Start ${les.qs.length} drills</button>
+    </article>`;
+  bindBack();
+  document.getElementById("go").addEventListener("click", () => { L.step = 0; question(); });
+  scrollTo(0, 0);
+}
+
+/* ---------------- Pitch rendering ---------------- */
+function pitchMarkup(sc) {
+  let s = `<defs>
+    <marker id="ah-pass" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,1 L9,5 L0,9 z" fill="#eef3ea"/></marker>
+    <marker id="ah-run" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,1 L9,5 L0,9 z" fill="#ffc53d"/></marker>
+    <marker id="ah-opp" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,1 L9,5 L0,9 z" fill="#e5534f"/></marker>
+  </defs>
+  <rect x="-6" y="-6" width="80" height="117" class="stripe-b"/>`;
+  for (let i = 0; i < 11; i++) {
+    s += `<rect x="-6" y="${(i * 9.55).toFixed(2)}" width="80" height="9.55" class="${i % 2 ? "stripe-b" : "stripe-a"}"/>`;
+  }
+  if (sc && sc.shade) sc.shade.forEach((z) => { s += `<rect class="shade" x="${z.r[0]}" y="${z.r[1]}" width="${z.r[2]}" height="${z.r[3]}" rx="1"/>`; });
+  if (sc && sc.thirds) s += `<line class="helper" x1="0" y1="35" x2="68" y2="35"/><line class="helper" x1="0" y1="70" x2="68" y2="70"/>`;
+  if (sc && sc.lanes) [13.84, 24.84, 43.16, 54.16].forEach((x) => { s += `<line class="helper" x1="${x}" y1="0" x2="${x}" y2="105"/>`; });
+  s += `<g>
+    <rect class="chalk" x="0" y="0" width="68" height="105"/>
+    <line class="chalk" x1="0" y1="52.5" x2="68" y2="52.5"/>
+    <circle class="chalk" cx="34" cy="52.5" r="9.15"/><circle class="chalk-dot" cx="34" cy="52.5" r=".4"/>
+    <rect class="chalk" x="13.84" y="0" width="40.32" height="16.5"/>
+    <rect class="chalk" x="24.84" y="0" width="18.32" height="5.5"/>
+    <circle class="chalk-dot" cx="34" cy="11" r=".35"/>
+    <path class="chalk" d="M26.69 16.5 A9.15 9.15 0 0 0 41.31 16.5"/>
+    <rect class="chalk" x="30.34" y="-1.4" width="7.32" height="1.4"/>
+    <rect class="chalk" x="13.84" y="88.5" width="40.32" height="16.5"/>
+    <rect class="chalk" x="24.84" y="99.5" width="18.32" height="5.5"/>
+    <circle class="chalk-dot" cx="34" cy="94" r=".35"/>
+    <path class="chalk" d="M26.69 88.5 A9.15 9.15 0 0 1 41.31 88.5"/>
+    <rect class="chalk" x="30.34" y="105" width="7.32" height="1.4"/>
+  </g>
+  <g id="lyr-zone"></g><g id="lyr-arrow"></g><g id="lyr-pl"></g><g id="lyr-ball"></g><g id="lyr-top"></g>`;
+  return s;
+}
+
+let P = {}; // id -> { x, y, team, el }
+let ball = { owner: null, x: 0, y: 0, el: null };
+
+function svgEl(tag, attrs, parent) {
+  const e = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function place(el, x, y) { el.style.transform = `translate(${x}px, ${y}px)`; }
+
+function buildScene(svg, sc) {
+  P = {};
+  ball = { owner: null, x: 0, y: 0, el: null };
+  const lyr = svg.querySelector("#lyr-pl");
+  const add = (arr, team) => arr.forEach(([id, x, y, label]) => {
+    const g = svgEl("g", { class: `pl ${team}`, "data-id": id }, lyr);
+    svgEl("circle", { class: "hit", r: 4 }, g);
+    svgEl("circle", { class: "ring", r: 3.4 }, g);
+    svgEl("circle", { class: "body", r: 2.3 }, g);
+    const t = svgEl("text", { y: 0.1 }, g);
+    t.textContent = label == null ? "" : label;
+    place(g, x, y);
+    P[id] = { x, y, team, el: g };
+  });
+  add(sc.them || [], "them");
+  add(sc.us || [], "us");
+  if (sc.ar) sc.ar.forEach((a) => {
+    const from = P[a.f] ? [P[a.f].x, P[a.f].y] : a.f;
+    if (a.rev) drawArrow(svg, a.t, from, a.k, false, true);
+    else drawArrow(svg, from, a.t, a.k, true, false);
+  });
+  if (sc.ball) {
+    const g = svgEl("g", { class: "ball" }, svg.querySelector("#lyr-ball"));
+    svgEl("circle", { r: 0.95 }, g);
+    ball.el = g;
+    setBall(sc.ball);
+  } else ball.el = null;
+}
+function ballSpot(id) {
+  const p = P[id];
+  return p.team === "us" ? [p.x + 2.1, p.y - 1.7] : [p.x - 2.1, p.y + 1.7];
+}
+function setBall(target) {
+  if (!ball.el) return;
+  let xy;
+  if (typeof target === "string") { ball.owner = target; xy = ballSpot(target); }
+  else { ball.owner = null; xy = target; }
+  ball.x = xy[0]; ball.y = xy[1];
+  place(ball.el, xy[0], xy[1]);
+}
+function drawArrow(svg, a, b, kind, trimStart, trimEnd) {
+  let [x1, y1] = a, [x2, y2] = b;
+  const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len, uy = dy / len;
+  if (trimStart) { x1 += ux * 2.8; y1 += uy * 2.8; }
+  const endTrim = trimEnd ? 3 : 0.6;
+  x2 -= ux * endTrim; y2 -= uy * endTrim;
+  const m = kind === "pass" ? "ah-pass" : kind === "opp" ? "ah-opp" : "ah-run";
+  svgEl("line", { class: `arr ${kind}`, x1, y1, x2, y2, "marker-end": `url(#${m})` }, svg.querySelector("#lyr-arrow"));
+}
+
+async function playReveal(svg, steps) {
+  if (!steps) return;
+  for (const step of steps) {
+    if (!svg.isConnected) return;
+    for (const act of step) {
+      if (act.r || act.d) {
+        const [id, to] = act.r || act.d;
+        const p = P[id];
+        drawArrow(svg, [p.x, p.y], to, act.d ? "drib" : "run", true, false);
+        p.x = to[0]; p.y = to[1];
+        place(p.el, p.x, p.y);
+        if (act.d || ball.owner === id) setBall(id);
+      }
+    }
+    for (const act of step) {
+      if (act.p) {
+        const [from, to] = act.p;
+        const start = [ball.x, ball.y];
+        const end = typeof to === "string" ? ballSpot(to) : to;
+        drawArrow(svg, start, end, "pass", false, false);
+        setBall(to);
+      }
+      if (act.ol != null) {
+        const top = svg.querySelector("#lyr-top");
+        svgEl("line", { class: "oline", x1: 0, y1: act.ol, x2: 68, y2: act.ol }, top);
+        const t = svgEl("text", { class: "oline-lbl", x: 1, y: act.ol - 0.8 }, top);
+        t.textContent = "OFFSIDE LINE";
+      }
+    }
+    await wait(reduced ? 150 : 900);
+  }
+}
+
+function toSvgPoint(svg, evt) {
+  const pt = svg.createSVGPoint();
+  pt.x = evt.clientX; pt.y = evt.clientY;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+function inZone(z, x, y) {
+  if (z.c) return Math.hypot(x - z.c[0], y - z.c[1]) <= z.c[2];
+  const [rx, ry, rw, rh] = z.r;
+  return x >= rx && x <= rx + rw && y >= ry && y <= ry + rh;
+}
+function drawZones(svg, zones) {
+  const lyr = svg.querySelector("#lyr-zone");
+  zones.forEach((z) => {
+    if (z.c) svgEl("circle", { class: "zone-ok", cx: z.c[0], cy: z.c[1], r: z.c[2] }, lyr);
+    else svgEl("rect", { class: "zone-ok", x: z.r[0], y: z.r[1], width: z.r[2], height: z.r[3], rx: 1 }, lyr);
+  });
+}
+
+/* ---------------- Question ---------------- */
+function shuffle(a) {
+  const b = a.slice();
+  for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; }
+  return b;
+}
+
+function question() {
+  const les = LESSONS[L.i];
+  const q = les.qs[L.step];
+  const hint = q.t === "pick" ? "Tap a teammate with a dashed ring" : q.t === "zone" ? "Tap a spot on the pitch" : "Choose an answer";
+  let opts = "";
+  let order = [];
+  if (q.t === "mcq") {
+    order = shuffle(q.o.map((_, k) => k));
+    opts = `<div class="opts">${order.map((k, n) => `<button class="opt" data-k="${k}"><span class="k">${"ABCD"[n]}</span><span>${esc(q.o[k])}</span></button>`).join("")}</div>`;
+  }
+  const vb = q.s ? VIEWS[q.s.v] : null;
+  app.innerHTML = `${topbar(les.title)}
+    ${q.s ? `<div class="stage ${q.t === "zone" ? "zone" : ""}"><svg id="pitch" viewBox="${vb.join(" ")}" role="img" aria-label="Tactics board">${pitchMarkup(q.s)}</svg></div>` : ""}
+    <p class="prompt">${esc(q.q)}</p>
+    <p class="hint" id="hint">${hint}</p>
+    ${opts}
+    <div id="fbslot"></div>`;
+  bindBack();
+  const svg = document.getElementById("pitch");
+  if (svg) buildScene(svg, q.s);
+  let done = false;
+
+  const finish = async (ok) => {
+    done = true;
+    L.results[L.step] = ok;
+    document.getElementById("hint").hidden = true;
+    app.querySelectorAll(".dots i")[L.step].className = ok ? "ok" : "no";
+    const last = L.step === les.qs.length - 1;
+    const slot = document.getElementById("fbslot");
+    slot.innerHTML = `<div class="fb ${ok ? "good" : "bad"}"><h3>${ok ? "Correct" : "Not quite"}</h3><p>${esc(q.x)}</p>
+      <button class="btn" id="next">${last ? "See results" : "Next drill"}</button></div>`;
+    document.getElementById("next").addEventListener("click", () => {
+      if (last) result(); else { L.step++; question(); }
+    });
+    if (svg) {
+      svg.querySelectorAll(".pl.pickable").forEach((e) => e.classList.remove("pickable"));
+      if (q.z) drawZones(svg, q.z);
+      playReveal(svg, q.rv);
+    }
+    requestAnimationFrame(() => slot.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "nearest" }));
+  };
+
+  if (q.t === "mcq") {
+    app.querySelectorAll(".opt").forEach((b) => b.addEventListener("click", () => {
+      if (done) return;
+      const k = +b.dataset.k, ok = k === 0;
+      app.querySelectorAll(".opt").forEach((o) => {
+        o.disabled = true;
+        const kk = +o.dataset.k;
+        if (kk === 0) o.classList.add("good");
+        else if (o === b) o.classList.add("bad");
+        else o.classList.add("dim");
+      });
+      finish(ok);
+    }));
+  } else if (q.t === "pick") {
+    q.o.forEach((id) => P[id].el.classList.add("pickable"));
+    svg.addEventListener("click", (e) => {
+      if (done) return;
+      const g = e.target.closest(".pl.pickable");
+      if (!g) return;
+      const id = g.dataset.id, ok = id === q.a;
+      P[q.a].el.classList.add("good");
+      if (!ok) g.classList.add("bad");
+      finish(ok);
+    });
+  } else if (q.t === "zone") {
+    svg.addEventListener("click", (e) => {
+      if (done) return;
+      const pt = toSvgPoint(svg, e);
+      const ok = q.z.some((z) => inZone(z, pt.x, pt.y));
+      const g = svgEl("g", { class: `tap ${ok ? "good" : "bad"}` }, svg.querySelector("#lyr-top"));
+      svgEl("circle", { cx: pt.x, cy: pt.y, r: 1.1 }, g);
+      finish(ok);
+    });
+  }
+  scrollTo(0, 0);
+}
+
+/* ---------------- Result ---------------- */
+function result() {
+  const les = LESSONS[L.i];
+  const n = les.qs.length, c = L.results.filter(Boolean).length;
+  const stars = c === n ? 3 : c / n >= 0.5 ? 2 : 1;
+  const prev = store.best[L.i];
+  const isBest = prev == null || stars > prev;
+  if (isBest) { store.best[L.i] = stars; save(); }
+  const hasNext = L.i < LESSONS.length - 1;
+  const msg = c === n ? "Perfect session. You read every situation." : c / n >= 0.5 ? "Solid work. Replay it any time for three stars." : "Every coach learns from the tape. Run it back.";
+  app.innerHTML = `${topbar(les.title)}
+    <section class="result">
+      <div class="big" aria-label="${stars} of 3 stars">${starsHTML(stars)}</div>
+      <h1>${c} of ${n} right</h1>
+      <p>${msg}${!isBest ? ` Your best is still ${prev} stars.` : ""}</p>
+      <div class="recap"><b>Take this to the pitch</b><p>${esc(les.key)}</p></div>
+      <div class="row">
+        ${hasNext ? `<button class="btn" id="nx">Next: ${esc(LESSONS[L.i + 1].title)}</button>` : `<p style="color:var(--home)">You've finished the whole course. Rank: ${rankName(totalStars())}.</p>`}
+        <button class="btn ghost" id="again">Replay lesson</button>
+        <button class="btn ghost" id="lessons">All lessons</button>
+      </div>
+    </section>`;
+  bindBack();
+  if (hasNext) document.getElementById("nx").addEventListener("click", () => startLesson(L.i + 1));
+  document.getElementById("again").addEventListener("click", () => startLesson(L.i));
+  document.getElementById("lessons").addEventListener("click", home);
+  scrollTo(0, 0);
+}
+
+home();
+})();
+</script>
